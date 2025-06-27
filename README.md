@@ -40,7 +40,7 @@
 2.	Open the project in Xcode:
 3. Run the app on an iOS device
 
-📤 Importing Health Data
+## 📤 Importing Health Data
 
 You can import:
 	•	Blood Pressure (Systolic + Diastolic)
@@ -49,17 +49,17 @@ You can import:
 
 All data is fetched from Apple Health and timestamped appropriately.
 
-⸻
+---
 
-🧪 Todo / Future Enhancements
+## 🧪 Todo / Future Enhancements
 	•	Add trend graphs for metrics
 	•	Sync with iCloud or CloudKit
 	•	Add reminders for health check-ins
 	•	Customize measurement units
 
-⸻
+---
 
-👤 Author
+## 👤 Author
 
-Faiz Luqman
-📧 faizluqman7@gmail.com
+- Faiz Luqman
+- 📧 faizluqman7@gmail.com
