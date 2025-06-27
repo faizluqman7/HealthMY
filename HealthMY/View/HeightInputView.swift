@@ -41,6 +41,7 @@ struct HeightInputView: View {
         let reading = HeightReading(height: h)
         modelContext.insert(reading)
         try? modelContext.save()
+        APIService.shared.postHeight(height: h, date: reading.date)
         height = ""
     }
 }
