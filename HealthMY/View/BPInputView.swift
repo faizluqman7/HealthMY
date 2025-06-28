@@ -47,7 +47,6 @@ struct BPInputView: View {
         let reading = BloodPressureReading(systolic: sys, diastolic: dia)
         modelContext.insert(reading)
         try? modelContext.save()
-        APIService.shared.postBloodPressure(systolic: sys, diastolic: dia, date: reading.date)
         systolic = ""
         diastolic = ""
     }
