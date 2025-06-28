@@ -40,7 +40,7 @@ struct HealthAdvice: Codable {
 
 class APIService {
     static let shared = APIService()
-    private let baseURL = "http://192.168.8.139:8000/health"
+    private let baseURL = "https://healthmy-backend.vercel.app/health"
 
     private let dateFormatter: ISO8601DateFormatter = {
         let formatter = ISO8601DateFormatter()
