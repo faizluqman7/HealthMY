@@ -41,7 +41,6 @@ struct WeightInputView: View {
         let reading = WeightReading(weight: w)
         modelContext.insert(reading)
         try? modelContext.save()
-        APIService.shared.postWeight(weight: w, date: reading.date)
         weight = ""
     }
 }
