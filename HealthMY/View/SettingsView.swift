@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -37,32 +38,67 @@ struct SettingsView: View {
                 return
             }
 
-            // Proceed with fetching and saving only after authorization succeeds
-            HealthKitManager.shared.fetchLatestWeight { weight, date in
-                if let w = weight, let date = date {
-                    DispatchQueue.main.async {
-                        modelContext.insert(WeightReading(weight: w, date: date))
+            let now = Date()
+            let ninetyDaysAgo = Calendar.current.date(byAdding: .day, value: -90, to: now) ?? now
+
+            // Weight
+            HealthKitManager.shared.fetchAllWeightSamples { samples in
+                let filtered: [(Double, Date)]
+                if samples.count > 180 {
+                    filtered = samples.filter { $0.1 >= ninetyDaysAgo }
+                } else {
+                    filtered = samples
+                }
+                DispatchQueue.main.async {
+                    for (w, date) in filtered {
+                        let fetchDescriptor = FetchDescriptor<WeightReading>(predicate: #Predicate { $0.weight == w && $0.date == date })
+                        let existing = try? modelContext.fetch(fetchDescriptor)
+                        if existing?.isEmpty ?? true {
+                            modelContext.insert(WeightReading(weight: w, date: date))
+                        }
                     }
                 }
             }
 
-            HealthKitManager.shared.fetchLatestHeight { height, date in
-                if let h = height, let date = date {
-                    DispatchQueue.main.async {
-                        modelContext.insert(HeightReading(height: h * 100, date: date)) // m to cm
+            // Height
+            HealthKitManager.shared.fetchAllHeightSamples { samples in
+                let filtered: [(Double, Date)]
+                if samples.count > 180 {
+                    filtered = samples.filter { $0.1 >= ninetyDaysAgo }
+                } else {
+                    filtered = samples
+                }
+                DispatchQueue.main.async {
+                    for (h, date) in filtered {
+                        let fetchDescriptor = FetchDescriptor<HeightReading>(predicate: #Predicate { $0.height == h * 100 && $0.date == date })
+                        let existing = try? modelContext.fetch(fetchDescriptor)
+                        if existing?.isEmpty ?? true {
+                            modelContext.insert(HeightReading(height: h * 100, date: date)) // m to cm
+                        }
                     }
                 }
             }
 
-            HealthKitManager.shared.fetchLatestBloodPressure { sys, dia, date in
-                if let sys = sys, let dia = dia, let date = date {
-                    DispatchQueue.main.async {
-                        modelContext.insert(BloodPressureReading(systolic: sys, diastolic: dia, date: date))
+            // Blood Pressure
+            HealthKitManager.shared.fetchAllBloodPressureSamples { samples in
+                let filtered: [(Int, Int, Date)]
+                if samples.count > 180 {
+                    filtered = samples.filter { $0.2 >= ninetyDaysAgo }
+                } else {
+                    filtered = samples
+                }
+                DispatchQueue.main.async {
+                    for (sys, dia, date) in filtered {
+                        let fetchDescriptor = FetchDescriptor<BloodPressureReading>(predicate: #Predicate { $0.systolic == sys && $0.diastolic == dia && $0.date == date })
+                        let existing = try? modelContext.fetch(fetchDescriptor)
+                        if existing?.isEmpty ?? true {
+                            modelContext.insert(BloodPressureReading(systolic: sys, diastolic: dia, date: date))
+                        }
                     }
                 }
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                 do {
                     try modelContext.save()
                     refreshID = UUID() // trigger re-render

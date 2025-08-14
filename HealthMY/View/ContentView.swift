@@ -18,15 +18,19 @@ struct ContentView: View {
                 }
             
             AddReadingView()
+                .id(refreshID)
                 .tabItem {
                     Label("Add Reading", systemImage: "plus.circle")
                 }
             
-            HistoryView()
-                .id(refreshID)
-                .tabItem {
-                    Label("History", systemImage: "list.bullet")
-                }
+//            HistoryView()
+//                .id(refreshID)
+//                .tabItem {
+//                    Label("History", systemImage: "list.bullet")
+//                }
+            GraphsView().tabItem {
+                Label("Graphs", systemImage: "chart.line.uptrend.xyaxis")
+            }
             
             SettingsView(refreshID: $refreshID)
                 .tabItem {

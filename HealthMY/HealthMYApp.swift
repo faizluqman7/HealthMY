@@ -14,6 +14,15 @@ struct HealthMYApp: App {
         WindowGroup {
             ContentView()
         }
-        .modelContainer(for: [BloodPressureReading.self, WeightReading.self, HeightReading.self])
+        .modelContainer(for: [
+            BloodPressureReading.self,
+            WeightReading.self,
+            HeightReading.self,
+            PulseReading.self,
+            SleepReading.self,
+            GlucoseReading.self,
+            OtherVitalReading.self,
+            HealthGoal.self
+        ])
     }
 }
