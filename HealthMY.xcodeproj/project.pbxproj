@@ -40,6 +40,11 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		F4AA17932E4E7E750081B575 /* Screenshots */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Screenshots;
+			sourceTree = "<group>";
+		};
 		F4E87C232E08C1AF00BAFBA3 /* HealthMY */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -88,6 +93,7 @@
 		F4E87C182E08C1AF00BAFBA3 = {
 			isa = PBXGroup;
 			children = (
+				F4AA17932E4E7E750081B575 /* Screenshots */,
 				F4E87C232E08C1AF00BAFBA3 /* HealthMY */,
 				F4E87C352E08C1B100BAFBA3 /* HealthMYTests */,
 				F4E87C3F2E08C1B100BAFBA3 /* HealthMYUITests */,
@@ -121,6 +127,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
+				F4AA17932E4E7E750081B575 /* Screenshots */,
 				F4E87C232E08C1AF00BAFBA3 /* HealthMY */,
 			);
 			name = HealthMY;

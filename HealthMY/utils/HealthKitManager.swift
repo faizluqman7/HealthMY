@@ -73,6 +73,63 @@ class HealthKitManager {
         healthStore.execute(query)
     }
     
+    // Fetch all weight samples (optionally within a date range)
+    func fetchAllWeightSamples(from startDate: Date? = nil, to endDate: Date? = nil, completion: @escaping ([(Double, Date)]) -> Void) {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else {
+            completion([])
+            return
+        }
+        let unit = HKUnit.gramUnit(with: .kilo)
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let query = HKSampleQuery(sampleType: type, predicate: startDate == nil && endDate == nil ? nil : predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, results, _ in
+            let samples = (results as? [HKQuantitySample])?.map { ($0.quantity.doubleValue(for: unit), $0.endDate) } ?? []
+            completion(samples)
+        }
+        healthStore.execute(query)
+    }
+
+    // Fetch all height samples (optionally within a date range)
+    func fetchAllHeightSamples(from startDate: Date? = nil, to endDate: Date? = nil, completion: @escaping ([(Double, Date)]) -> Void) {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .height) else {
+            completion([])
+            return
+        }
+        let unit = HKUnit.meter()
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let query = HKSampleQuery(sampleType: type, predicate: startDate == nil && endDate == nil ? nil : predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, results, _ in
+            let samples = (results as? [HKQuantitySample])?.map { ($0.quantity.doubleValue(for: unit), $0.endDate) } ?? []
+            completion(samples)
+        }
+        healthStore.execute(query)
+    }
+
+    // Fetch all blood pressure samples (optionally within a date range)
+    func fetchAllBloodPressureSamples(from startDate: Date? = nil, to endDate: Date? = nil, completion: @escaping ([(Int, Int, Date)]) -> Void) {
+        guard let bpType = HKCorrelationType.correlationType(forIdentifier: .bloodPressure) else {
+            completion([])
+            return
+        }
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let query = HKSampleQuery(sampleType: bpType, predicate: startDate == nil && endDate == nil ? nil : predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, results, _ in
+            let samples: [(Int, Int, Date)] = (results as? [HKCorrelation])?.compactMap { correlation in
+                let systolic = correlation.objects(for: HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic)!)
+                    .compactMap { ($0 as? HKQuantitySample)?.quantity.doubleValue(for: HKUnit.millimeterOfMercury()) }
+                    .first
+                let diastolic = correlation.objects(for: HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!)
+                    .compactMap { ($0 as? HKQuantitySample)?.quantity.doubleValue(for: HKUnit.millimeterOfMercury()) }
+                    .first
+                let date = correlation.endDate
+                if let sys = systolic, let dia = diastolic {
+                    return (Int(sys), Int(dia), date)
+                } else {
+                    return nil
+                }
+            } ?? []
+            completion(samples)
+        }
+        healthStore.execute(query)
+    }
+    
     // Generic method
     private func fetchLatestQuantitySample(for identifier: HKQuantityTypeIdentifier, unit: HKUnit, completion: @escaping (Double?, Date?) -> Void) {
         guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else {

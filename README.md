@@ -25,11 +25,14 @@
 
 ---
 
+
 ## 📱 Screenshots
 
-> Available soon!
+<p align="center">
+	<img src="Screenshots/IMG_8632.PNG" alt="HealthMY Screenshot 1" width="250" />
+	<img src="Screenshots/IMG_8633.PNG" alt="HealthMY Screenshot 2" width="250" />
+</p>
 
----
 
 ## ⚙️ Setup & Installation
 
