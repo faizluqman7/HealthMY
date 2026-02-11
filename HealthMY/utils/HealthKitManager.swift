@@ -17,7 +17,9 @@ class HealthKitManager {
         HKObjectType.quantityType(forIdentifier: .bodyMass)!,
         HKObjectType.quantityType(forIdentifier: .height)!,
         HKObjectType.quantityType(forIdentifier: .bloodPressureSystolic)!,
-        HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!
+        HKObjectType.quantityType(forIdentifier: .bloodPressureDiastolic)!,
+        HKObjectType.quantityType(forIdentifier: .heartRate)!,
+        HKObjectType.quantityType(forIdentifier: .bloodGlucose)!
     ]
     
     // Request access
@@ -130,6 +132,36 @@ class HealthKitManager {
         healthStore.execute(query)
     }
     
+    // Fetch all pulse (heart rate) samples
+    func fetchAllPulseSamples(from startDate: Date? = nil, to endDate: Date? = nil, completion: @escaping ([(Int, Date)]) -> Void) {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .heartRate) else {
+            completion([])
+            return
+        }
+        let unit = HKUnit.count().unitDivided(by: .minute())
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let query = HKSampleQuery(sampleType: type, predicate: startDate == nil && endDate == nil ? nil : predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, results, _ in
+            let samples = (results as? [HKQuantitySample])?.map { (Int($0.quantity.doubleValue(for: unit)), $0.endDate) } ?? []
+            completion(samples)
+        }
+        healthStore.execute(query)
+    }
+
+    // Fetch all glucose samples
+    func fetchAllGlucoseSamples(from startDate: Date? = nil, to endDate: Date? = nil, completion: @escaping ([(Double, Date)]) -> Void) {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bloodGlucose) else {
+            completion([])
+            return
+        }
+        let unit = HKUnit(from: "mg/dL")
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
+        let query = HKSampleQuery(sampleType: type, predicate: startDate == nil && endDate == nil ? nil : predicate, limit: HKObjectQueryNoLimit, sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]) { _, results, _ in
+            let samples = (results as? [HKQuantitySample])?.map { ($0.quantity.doubleValue(for: unit), $0.endDate) } ?? []
+            completion(samples)
+        }
+        healthStore.execute(query)
+    }
+
     // Generic method
     private func fetchLatestQuantitySample(for identifier: HKQuantityTypeIdentifier, unit: HKUnit, completion: @escaping (Double?, Date?) -> Void) {
         guard let type = HKQuantityType.quantityType(forIdentifier: identifier) else {

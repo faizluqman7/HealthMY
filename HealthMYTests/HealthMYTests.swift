@@ -65,4 +65,135 @@ final class APIServiceTests: XCTestCase {
         }
         waitForExpectations(timeout: 10, handler: nil)
     }
+
+    func testPulseEntryEncodingDecoding() throws {
+        let entry = PulseEntry(pulse: 72, date: "2024-06-27T12:00:00Z")
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(PulseEntry.self, from: data)
+        XCTAssertEqual(decoded.pulse, 72)
+        XCTAssertEqual(decoded.date, "2024-06-27T12:00:00Z")
+    }
+
+    func testSleepEntryEncodingDecoding() throws {
+        let entry = SleepEntry(hours: 7.5, date: "2024-06-27T12:00:00Z")
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(SleepEntry.self, from: data)
+        XCTAssertEqual(decoded.hours, 7.5)
+        XCTAssertEqual(decoded.date, "2024-06-27T12:00:00Z")
+    }
+
+    func testGlucoseEntryEncodingDecoding() throws {
+        let entry = GlucoseEntry(glucose: 95.0, date: "2024-06-27T12:00:00Z")
+        let data = try JSONEncoder().encode(entry)
+        let decoded = try JSONDecoder().decode(GlucoseEntry.self, from: data)
+        XCTAssertEqual(decoded.glucose, 95.0)
+        XCTAssertEqual(decoded.date, "2024-06-27T12:00:00Z")
+    }
+
+    func testMLAnalysisPayloadEncoding() throws {
+        let payload = MLAnalysisPayload(
+            score: 85,
+            status: "Healthy",
+            metric_risks: ["bp": "normal", "pulse": "elevated"],
+            trends: ["bp": "improving"],
+            correlation_alerts: ["BP and pulse are correlated"],
+            projections: nil,
+            projected_scores: nil
+        )
+        let data = try JSONEncoder().encode(payload)
+        let decoded = try JSONDecoder().decode(MLAnalysisPayload.self, from: data)
+        XCTAssertEqual(decoded.score, 85)
+        XCTAssertEqual(decoded.status, "Healthy")
+        XCTAssertEqual(decoded.metric_risks["bp"], "normal")
+        XCTAssertEqual(decoded.trends["bp"], "improving")
+        XCTAssertEqual(decoded.correlation_alerts.count, 1)
+    }
+
+    func testHealthInputEncodesAllFields() throws {
+        let input = HealthInput(
+            bp: [BPEntry(systolic: 120, diastolic: 80, date: "2024-01-01T00:00:00Z")],
+            weight: [WeightEntry(weight: 70, date: "2024-01-01T00:00:00Z")],
+            height: [HeightEntry(height: 175, date: "2024-01-01T00:00:00Z")],
+            pulse: [PulseEntry(pulse: 72, date: "2024-01-01T00:00:00Z")],
+            sleep: [SleepEntry(hours: 7.5, date: "2024-01-01T00:00:00Z")],
+            glucose: [GlucoseEntry(glucose: 95, date: "2024-01-01T00:00:00Z")],
+            ml_analysis: nil
+        )
+        let data = try JSONEncoder().encode(input)
+        let json = try JSONSerialization.jsonObject(with: data) as? [String: Any]
+        XCTAssertNotNil(json?["bp"])
+        XCTAssertNotNil(json?["pulse"])
+        XCTAssertNotNil(json?["sleep"])
+        XCTAssertNotNil(json?["glucose"])
+    }
+}
+
+final class RuleBasedScoringTests: XCTestCase {
+    func testHealthyInputsScoreHigh() throws {
+        let result = RuleBasedScoring.shared.scoreReadings(
+            bp: [(systolic: 118, diastolic: 75)],
+            pulse: [70],
+            glucose: [95],
+            sleep: [7.5],
+            weight: [70],
+            height: [175]
+        )
+        XCTAssertGreaterThanOrEqual(result.score, 90)
+        XCTAssertEqual(result.risks["bp"], .normal)
+        XCTAssertEqual(result.risks["pulse"], .normal)
+        XCTAssertEqual(result.risks["glucose"], .normal)
+        XCTAssertEqual(result.risks["sleep"], .normal)
+        XCTAssertEqual(result.risks["bmi"], .normal)
+    }
+
+    func testUnhealthyInputsScoreLow() throws {
+        let result = RuleBasedScoring.shared.scoreReadings(
+            bp: [(systolic: 160, diastolic: 100)],
+            pulse: [120],
+            glucose: [200],
+            sleep: [3.0],
+            weight: [130],
+            height: [165]
+        )
+        XCTAssertLessThanOrEqual(result.score, 50)
+        XCTAssertEqual(result.risks["bp"], .high)
+        XCTAssertEqual(result.risks["pulse"], .high)
+        XCTAssertEqual(result.risks["glucose"], .high)
+        XCTAssertEqual(result.risks["sleep"], .high)
+        XCTAssertEqual(result.risks["bmi"], .high)
+    }
+
+    func testMissingMetricsAdjustWeights() throws {
+        let resultFull = RuleBasedScoring.shared.scoreReadings(
+            bp: [(systolic: 118, diastolic: 75)],
+            pulse: [70],
+            glucose: [95],
+            sleep: [7.5],
+            weight: [70],
+            height: [175]
+        )
+        let resultPartial = RuleBasedScoring.shared.scoreReadings(
+            bp: [(systolic: 118, diastolic: 75)],
+            pulse: [],
+            glucose: [],
+            sleep: [],
+            weight: [],
+            height: []
+        )
+        // Both should score high since BP is healthy
+        XCTAssertGreaterThanOrEqual(resultFull.score, 90)
+        XCTAssertGreaterThanOrEqual(resultPartial.score, 90)
+    }
+
+    func testEmptyInputsReturnDefault() throws {
+        let result = RuleBasedScoring.shared.scoreReadings(
+            bp: [],
+            pulse: [],
+            glucose: [],
+            sleep: [],
+            weight: [],
+            height: []
+        )
+        XCTAssertEqual(result.score, 50)
+    }
 }
